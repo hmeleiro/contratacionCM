@@ -1,5 +1,8 @@
 ## Scraper de contratos menores para 2015
 
+setwd("")  #Poner ruta al directorio de trabajo
+
+
 require(stringr)
 require(httr)
 require(rvest)
