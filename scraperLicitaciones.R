@@ -1,5 +1,7 @@
-setwd("/Users/meleiro/Dropbox/MASTER/DATOS/R/CONTRATOS MENORES")
+## Scraper de licitaciones para 2015-2017
 
+
+setwd("")  #Poner ruta al directorio de trabajo
 
 require(stringr)
 require(httr)
