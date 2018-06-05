@@ -4,8 +4,10 @@ Proyecto de scrapeo del [portal de contratación de la Comunidad de Madrid](http
 Puedes ver un breve informe con los datos en este [enlace](https://cdn.rawgit.com/meneos/contratacionCM/0dc0380e/Informe.html).
 
 ## Cómo citar el dataset
-Dataset contratación pública en la Comunidad de Madrid (2015-2017) elaborado por [@hmeleiros](https://twitter.com/hmeleiros).
+[Dataset contratación pública en la Comunidad de Madrid (2015-2017)](https://github.com/meneos/contratacionCM) elaborado por [@hmeleiros](https://twitter.com/hmeleiros).
 
 ## Cómo citar los scrapers
-Scrapers Portal de Contratación de la Comunidad de Madrid elaborado por [@hmeleiros](https://twitter.com/hmeleiros).
+[Scrapers Portal de Contratación de la Comunidad de Madrid](https://github.com/meneos/contratacionCM) elaborado por [@hmeleiros](https://twitter.com/hmeleiros).
+
+Se deberá incluir los links al repositorio y a la cuenta de Twitter @hmeleiros
 
