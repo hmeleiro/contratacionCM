@@ -1,0 +1,423 @@
+---
+title: "Informe sobre la contratación pública en la Comunidad de Madrid"
+output:
+  rmarkdown::html_document:
+    theme: lumen
+---
+
+<style type="text/css">
+
+body{ /* Normal  */
+      font-size: 15px;
+  }
+td {  /* Table  */
+  font-size: 15px;
+}
+h1.title {
+  font-size: 38px;
+  color: DarkRed;
+}
+h1 { /* Header 1 */
+  font-size: 28px;
+  color: DarkBlue;
+}
+h2 { /* Header 2 */
+    font-size: 22px;
+  color: DarkBlue;
+}
+h3 { /* Header 3 */
+  font-size: 18px;
+  font-family: "Times New Roman", Times, serif;
+  color: DarkBlue;
+}
+code.r{ /* Code block */
+    font-size: 12px;
+}
+pre { /* Code block - determines code spacing between lines */
+    font-size: 14px;
+}
+</style>
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = FALSE,
+	message = FALSE,
+	warning = FALSE
+)
+knitr::opts_knit$set(root.dir = "/Users/meleiro/Dropbox/MASTER/DATOS/R/CONTRATOS MENORES/data/definitivos")
+```
+
+
+```{r}
+currency_format <- function(symbol_currency = "$", symbol_position = "before", symbol_spacing = "none", separator_thousand = ",", separator_thousand_interval = 3, separator_decimal = ".", separator_decimal_interval = 3, largest_with_cents = 100000, nsmall = 0L, trim = TRUE, scientific = FALSE, digits = 1L, drop0trailing = TRUE, currency_unit = "", negative_parentheses = FALSE) {
+  function(x) {
+    # format numeric axis labels
+    x <- plyr::round_any(x, 0.01)
+    if (max(x, na.rm = TRUE) < largest_with_cents & 
+      !all(x == floor(x), na.rm = TRUE)) {
+      nsmall <- 2L
+    } else {
+      x <- plyr::round_any(x, 1)
+      nsmall <- 0L
+    }
+    labels_format <- format(x, nsmall = nsmall, trim = trim, scientific = scientific, digits = digits, drop0trailing = drop0trailing, big.mark = separator_thousand, big.interval = separator_thousand_interval, decimal.mark = separator_decimal, small.interval = separator_decimal_interval)
+    # add currency symbol to labels and position according to style
+    if (symbol_spacing == "none" & symbol_position == "after")
+      labels <- paste0(labels_format, symbol_currency)
+    if (symbol_spacing == "single" & symbol_position == "before")
+      labels <- paste0(symbol_currency, " ", labels_format)
+    if (symbol_spacing == "single" & symbol_position == "after")
+      labels <- paste0(labels_format, " ", symbol_currency)
+    if (symbol_spacing == "none" & symbol_position == "before")
+      labels <- paste0(symbol_currency, labels_format)
+    # millions
+    if (currency_unit == "million_us")  # overrules label/symbol positions
+      labels <- paste0(symbol_currency, labels_format, "M")
+    if (currency_unit == "million_uk")  # overrules label/symbol positions
+      labels <- paste0(symbol_currency, labels_format, "m")
+    if (currency_unit == "million_french")  # overrules label/symbol positions
+      labels <- paste0(labels_format, " Mio ", symbol_currency)
+    # billions
+    if (currency_unit == "billion_us")  # overrules label/symbol positions
+      labels <- paste0(symbol_currency, labels_format, "B")
+    if (currency_unit == "billion_uk")  # overrules label/symbol positions
+      labels <- paste0(symbol_currency, labels_format, "bn")
+    if (currency_unit == "billion_french")  # overrules label/symbol positions
+      labels <- paste0(labels_format, " Mrd ", symbol_currency)
+    
+    return(labels)
+  }
+}
+
+#' euro currency in French style
+euro_french_format <- function(x, ...) currency_format(symbol_currency = "€", symbol_position = "after", symbol_spacing = "single", separator_thousand = ".", separator_decimal = ",")
+euro_french <- euro_french_format()
+euro_french_code_format <- function(x, ...) currency_format(symbol_currency = "EUR", symbol_position = "after", symbol_spacing = "single", separator_thousand = ".", separator_decimal = ",")
+euro_french_code <- euro_french_code_format()
+
+```
+
+
+
+```{r}
+library(readr)
+library(stringr)
+library(ggplot2)
+library(dplyr)
+library(scales)
+library(ggthemes)
+library(gridExtra)
+library(grid)
+library(kableExtra)
+library(knitr)
+library(tidyr)
+
+contratos <- read_csv("contratospublicos_15_17_completo.csv")
+
+contratos <- contratos[!duplicated(contratos$referencia),]
+#contratos <- contratos[!is.na(contratos$conIVA),]
+
+euros <- format_format(decimal.mark = ",", big.mark = ".", suffix = "€", scientific = FALSE)
+
+## Transformar fecha publicacion a formate Date
+
+day <- str_split(contratos$fecha_publicacion, pattern = " ", simplify = TRUE)[,1]
+mth <- str_split(contratos$fecha_publicacion, pattern = " ", simplify = TRUE)[,2]
+yr <- str_split(contratos$fecha_publicacion, pattern = " ", simplify = TRUE)[,3]
+
+fecha <- paste(yr, mth, day, sep = "-")
+
+fecha <- str_replace(fecha, "enero", "01")
+fecha <- str_replace(fecha, "febrero", "02")
+fecha <- str_replace(fecha, "marzo", "03")
+fecha <- str_replace(fecha, "abril", "04")
+fecha <- str_replace(fecha, "mayo", "05")
+fecha <- str_replace(fecha, "junio", "06")
+fecha <- str_replace(fecha, "diciembre", "12")
+fecha <- str_replace(fecha, "agosto", "08")
+fecha <- str_replace(fecha, "julio", "07")
+fecha <- str_replace(fecha, "noviembre", "11")
+fecha <- str_replace(fecha, "octubre", "10")
+fecha <- str_replace(fecha, "septiembre", "09")
+
+contratos$fecha_publicacion_f <- as.Date(fecha)
+
+contratos$tipo_contrato[contratos$tipo_contrato == "OBRAS"] <- "Obras"
+contratos$tipo_contrato[contratos$tipo_contrato == "Obra"] <- "Obras"
+contratos$tipo_contrato[contratos$tipo_contrato == "obras"] <- "Obras"
+
+
+contratos$tipo_contrato[contratos$tipo_contrato == "SUMINISTROS"] <- "Suministros"
+contratos$tipo_contrato[contratos$tipo_contrato == "SUMINISTRO"] <- "Suministros"
+contratos$tipo_contrato[contratos$tipo_contrato == "Suministro"] <- "Suministros"
+contratos$tipo_contrato[contratos$tipo_contrato == "suministro"] <- "Suministros"
+
+contratos$tipo_contrato[contratos$tipo_contrato == "SERVICIOS"] <- "Servicios"
+contratos$tipo_contrato[contratos$tipo_contrato == "Servicio"] <- "Servicios"
+contratos$tipo_contrato[contratos$tipo_contrato == "servicios"] <- "Servicios"
+contratos$tipo_contrato[contratos$tipo_contrato == "C. Servicios"] <- "Servicios"
+
+
+contratos$tipo_contrato[contratos$tipo_contrato == "GESTIÓN DE SERVICIOS PÚBLICOS"] <- "Gestión de Servicios Públicos"
+contratos$tipo_contrato[contratos$tipo_contrato == "gestión de servicios públicos"] <- "Gestión de Servicios Públicos"
+contratos$tipo_contrato[contratos$tipo_contrato == "Gestión de servicios públicos"] <- "Gestión de Servicios Públicos"
+
+
+contratos$tipo_publicacion <- str_remove_all(contratos$tipo_publicacion, "\n")
+
+contratos$semana <- format(contratos$fecha_publicacion_f, "%Y-%W")
+contratos$mes <- format(contratos$fecha_publicacion_f, "%Y-%m")
+contratos$año <- format(contratos$fecha_publicacion_f, "%Y")
+
+```
+
+## Nota metodológica
+<p align="justify">El siguiente informe está elaborado a partir de un extracción del [portal de contratación de la Comunidad de Madrid](http://www.madrid.org/cs/Satellite?cid=1224915242285&language=es&pagename=PortalContratacion%2FPage%2FPCON_buscadorAvanzado) de 1.211.902 contratos con número de referencia único para asegurarnos de que no hay duplicados. La extracción se ha realizado utilizando una técnica de [web scrapping](https://es.wikipedia.org/wiki/Web_scraping). Los scripts utilizados y csv resultantes se pueden consultar en [este repositorio](https://github.com/meneos/contratacionCM). Por problemas técnicos los calculos de importe total para las licitaciones y los contratos adjudicados sin publicidad se refieren a las cantidades presupuestadas no a las finalmente adjudicadas.
+
+## Cuadro resumen del número de contratos según procedimiento de adjudicación (2015-2017)
+```{r}
+resumen <- contratos %>% group_by(año, tipo_publicacion) %>% summarise(`Número de contratos` = n())
+colnames(resumen)[2] <- "Tipo de procedimiento"
+
+resumen <- spread(resumen, año, `Número de contratos`)
+
+resumen[2,1] <- paste0(resumen[2,1], "*")
+
+resumen %>% kable(format = "html", format.args = list(big.mark = ".", decimal.mark = ",", scientific = FALSE), caption = "*Los datos de contratos menores de 2015 solo están disponibles para el periodo julio-diciembre.") %>% kable_styling(bootstrap_options = "striped", position = "center")
+```
+
+
+## Datos de contratación respecto al presupuesto
+
+Como se puede observar el dinero dedicado a los contratos menores ha ido en aumento desde 2015. Si para el periodo correspondiente a julio-diciembre de 2015 se dedicaron 194 millones de euros en 2017 esa cifra asciende a los 900 millones para el año completo. Los contratos menores supusieron el 3.6% del presupuesto de la Comunidad de Madrid de 2016 aumentando hasta el 4.8% en 2017, los dos únicos años para los que tenemos datos del año completo.
+
+Respecto a las otras modalidades de contratación pública observamos que los procedimientos sin publicidad se han mantenido estables, sin embargo los adjudicados con convocatoria anunciada han aumentado significativamente desde el 5.5% del presupuesto anual en 2016 al 9.87% en 2017.
+
+```{r results='asis'}
+
+#año <- read_delim("resumen.csv", ";", 
+ #   escape_double = FALSE, locale = locale(decimal_mark = ",", 
+  #      grouping_mark = "."), trim_ws = TRUE)
+
+año <- read_delim("resumen.csv", 
+    ";", escape_double = FALSE, col_types = cols(`2015` = col_number(), 
+        `2016` = col_number(), `2017**` = col_number()), 
+    locale = locale(decimal_mark = ",", grouping_mark = "."), 
+    trim_ws = TRUE)
+
+año$`2015`[año$campo == "% contratos menores"] <- percent(as.numeric(año$`2015`[año$campo == "% contratos menores"]))
+año$`2016`[año$campo == "% contratos menores"] <- percent(as.numeric(año$`2016`[año$campo == "% contratos menores"]))
+año$`2017**`[año$campo == "% contratos menores"] <- percent(as.numeric(año$`2017**`[año$campo == "% contratos menores"]))
+
+año$`2015`[año$campo == "% adjudicados sin publicidad"] <- percent(as.numeric(año$`2015`[año$campo == "% adjudicados sin publicidad"]))
+año$`2016`[año$campo == "% adjudicados sin publicidad"] <- percent(as.numeric(año$`2016`[año$campo == "% adjudicados sin publicidad"]))
+año$`2017**`[año$campo == "% adjudicados sin publicidad"] <- percent(as.numeric(año$`2017**`[año$campo == "% adjudicados sin publicidad"]))
+
+año$`2015`[año$campo == "% adjudicados con convocatoria anunciada"] <- percent(as.numeric(año$`2015`[año$campo == "% adjudicados con convocatoria anunciada"]))
+año$`2016`[año$campo == "% adjudicados con convocatoria anunciada"] <- percent(as.numeric(año$`2016`[año$campo == "% adjudicados con convocatoria anunciada"]))
+año$`2017**`[año$campo == "% adjudicados con convocatoria anunciada"] <- percent(as.numeric(año$`2017**`[año$campo == "% adjudicados con convocatoria anunciada"]))
+
+
+año[1,c(2:4)] <- euro_french(as.numeric(año[1,c(2:4)]))
+año[2,c(2:4)] <- euro_french(as.numeric(año[2,c(2:4)]))
+año[3,c(2:3)] <- euro_french(as.numeric(año[3,c(2:3)]))
+año[4,c(2:4)] <- euro_french(as.numeric(año[4,c(2:4)]))
+año[6,c(2:4)] <- euro_french(as.numeric(año[6,c(2:4)]))
+año[8,c(2:4)] <- euro_french(as.numeric(año[8,c(2:4)]))
+
+colnames(año)[1] <- " "
+
+año %>% kable(format = "html", caption = "*Los datos de contratos menores de 2015 solo están disponibles para el periodo julio-diciembre. <p> **Para los porcentajes de 2017 se usa el presupuesto consolidado ya que no está disponible el dato de presupuesto liquidado. </p>", format.args = list(big.mark = ".", decimal.mark = ",", scientific = FALSE)) %>% kable_styling(bootstrap_options = "striped", position = "center") %>% 
+  group_rows("Contratos Menores", 4, 5, label_row_css = "background-color: #666; color: #fff;") %>%
+  group_rows("Procedimientos sin publicidad", 6, 7, label_row_css = "background-color: #666; color: #fff;") %>%
+  group_rows("Procedimientos con convoctoria anunciada", 8, 9, label_row_css = "background-color: #666; color: #fff;") %>% row_spec(row = c(5,7,11), bold = T)
+
+
+```
+
+
+```{r fig.width=9}
+tipo <- contratos %>% group_by(semana, tipo_publicacion) %>% summarise(N = n(), con.IVA = sum(conIVA, na.rm = TRUE), media.conIVA = mean(conIVA, na.rm = TRUE))
+
+
+
+
+p <- ggplot(tipo, aes(x = semana, y = con.IVA))
+p + geom_line(aes(group = tipo_publicacion, color = tipo_publicacion)) + 
+  theme_minimal(base_family = "Roboto Condensed") + 
+  scale_color_wsj() + 
+  scale_x_discrete(breaks = c("2015-01", "2016-01", "2017-01"), 
+                   labels = c("2015", "2016", "2017")) +
+  scale_y_continuous(labels = euros) +
+  theme(legend.position = "bottom", plot.title = element_text(face = "bold")) +
+  labs(title = "Evolución del dinero dedicado a la contratación pública en la Comunidad de Madrid",
+       y = "Importe total con IVA",
+       x = NULL,
+       color = NULL)
+```
+
+Los contratos en los que se gasta más dinero son los de suministro. Esto tiene que ver sobre todo con el tipo de compras que se hacen desde los hospitales de la red madrileña de salud. Gran cantidad de contratos menores para la compra de medicamentos y suministros sanitarios que convierten a la Consejería de Sanidad en la que más dinero gasta en contratos menores. 
+
+
+```{r fig.width=9}
+
+menores <- contratos[contratos$tipo_publicacion == "Contratos Menores",]
+
+## Transformar fecha publicacion a formate Date
+
+day <- str_split(menores$fecha_publicacion, pattern = " ", simplify = TRUE)[,1]
+mth <- str_split(menores$fecha_publicacion, pattern = " ", simplify = TRUE)[,2]
+yr <- str_split(menores$fecha_publicacion, pattern = " ", simplify = TRUE)[,3]
+
+fecha <- paste(yr, mth, day, sep = "-")
+
+fecha <- str_replace(fecha, "enero", "01")
+fecha <- str_replace(fecha, "febrero", "02")
+fecha <- str_replace(fecha, "marzo", "03")
+fecha <- str_replace(fecha, "abril", "04")
+fecha <- str_replace(fecha, "mayo", "05")
+fecha <- str_replace(fecha, "junio", "06")
+fecha <- str_replace(fecha, "diciembre", "12")
+fecha <- str_replace(fecha, "agosto", "08")
+fecha <- str_replace(fecha, "julio", "07")
+fecha <- str_replace(fecha, "noviembre", "11")
+fecha <- str_replace(fecha, "octubre", "10")
+fecha <- str_replace(fecha, "septiembre", "09")
+
+menores$fecha_publicacion_f <- as.Date(fecha)
+
+menores$tipo_contrato[menores$tipo_contrato == "OBRAS"] <- "Obras"
+menores$tipo_contrato[menores$tipo_contrato == "Obra"] <- "Obras"
+menores$tipo_contrato[menores$tipo_contrato == "obras"] <- "Obras"
+
+
+menores$tipo_contrato[menores$tipo_contrato == "SUMINISTROS"] <- "Suministros"
+menores$tipo_contrato[menores$tipo_contrato == "SUMINISTRO"] <- "Suministros"
+menores$tipo_contrato[menores$tipo_contrato == "Suministro"] <- "Suministros"
+menores$tipo_contrato[menores$tipo_contrato == "suministro"] <- "Suministros"
+
+menores$tipo_contrato[menores$tipo_contrato == "SERVICIOS"] <- "Servicios"
+menores$tipo_contrato[menores$tipo_contrato == "Servicio"] <- "Servicios"
+menores$tipo_contrato[menores$tipo_contrato == "servicios"] <- "Servicios"
+menores$tipo_contrato[menores$tipo_contrato == "C. Servicios"] <- "Servicios"
+
+
+menores$tipo_contrato[menores$tipo_contrato == "GESTIÓN DE SERVICIOS PÚBLICOS"] <- "Gestión de Servicios Públicos"
+menores$tipo_contrato[menores$tipo_contrato == "gestión de servicios públicos"] <- "Gestión de Servicios Públicos"
+menores$tipo_contrato[menores$tipo_contrato == "Gestión de servicios públicos"] <- "Gestión de Servicios Públicos"
+
+menores$consejeria <- str_split(menores$adjudicadora, "-", simplify = TRUE)[,1]
+
+#levels(factor(menores$tipo_contrato))
+
+
+menores$semana <- format(menores$fecha_publicacion_f, "%W")
+menores$año <- format(menores$fecha_publicacion_f, "%Y")
+menores$mes <- format(menores$fecha_publicacion_f, "%Y-%m")
+
+menoresporaño <- menores[!duplicated(menores$referencia),] %>% group_by(año) %>% summarise(euros.conIVA = sum(conIVA), N = n(), media = mean(conIVA), mediana = median(conIVA))
+
+menoresporsemana <- menores %>% group_by(año, semana) %>% summarise(euros.conIVA = sum(conIVA), N = n())
+menoresportipo <- menores %>% group_by(mes, tipo_contrato) %>% summarise(euros.conIVA = sum(conIVA), N = n())
+menoresportipo <- menoresportipo[!is.na(menoresportipo$tipo_contrato),]
+
+euros <- format_format(decimal.mark = ",", big.mark = ".", suffix = "€", scientific = FALSE)
+
+
+p <- ggplot(menoresporsemana, aes(x = semana, y = euros.conIVA, group = año))
+p + geom_line(aes(color = año), show.legend = FALSE) + 
+  theme_minimal(base_family = "Roboto Condensed") + 
+  theme(plot.title = element_text(face = "bold")) +
+  scale_y_continuous(labels = euros) +
+  scale_x_discrete(breaks = c("01", "26", "52")) +
+  labs(title = "Dinero dedicado a contratos menores por semana",
+       y = "Importe con IVA",
+       x = "Semana del año") + 
+  scale_color_wsj() +
+  geom_text(data = subset(menoresporsemana, semana == "26"), aes(label = año, color = año), nudge_y = 1000000, nudge_x = -1, family = "Roboto Condensed", show.legend = FALSE)
+
+
+p <- ggplot(menoresportipo, aes(x = mes, y = euros.conIVA, group = tipo_contrato))
+p + geom_line(aes(color = tipo_contrato)) + 
+  theme_minimal(base_family = "Roboto Condensed") + 
+  theme(legend.position = "bottom", plot.title = element_text(face = "bold")) +
+  scale_y_log10(labels = euros) +
+  labs(title = "Dinero dedicado a contratos menores por mes y tipo de contrato",
+       x = NULL,
+       y = "Importe con IVA",
+       color = "Tipo de contrato") + 
+  scale_color_wsj() +
+  scale_x_discrete(breaks = c("2015-07", "2016-01", "2017-01"))
+
+
+```
+
+
+
+## Principales entidades adjudicadoras
+```{r}
+
+
+menores$consejeria[str_detect(menores$consejeria, "Consejería de Economía")] <- "Consejería de Economía, Empleo y Hacienda"
+adjudicadora <- menores %>% group_by(consejeria) %>% summarise(N = n(), conIVA = sum(conIVA))
+
+adjudicadora <- adjudicadora[order(adjudicadora$conIVA, decreasing = TRUE),]
+
+colnames(adjudicadora)[1] <- "Entidad adjudicadora"
+colnames(adjudicadora)[2] <- "Número de contratos menores"
+colnames(adjudicadora)[3] <- "Importe total con IVA"
+
+adjudicadora[1:10,] %>% kable(format = "html", format.args = list(big.mark = ".", decimal.mark = ",", scientific = FALSE), caption = "Los datos corresponden al periodo julio de 2015-diciembre de 2017") %>% kable_styling(bootstrap_options = "striped", position = "center")
+
+
+
+
+```
+
+
+
+Este gráfico revela hasta qué punto la Consejería de Sanidad es el principal adjudicador de contratos menores. Las principales empresas beneficiarias de contratos menores son farmacéuticas o empresas suministradores de material sanitario. Gilead S.A, la mayor beneficiaria, es la fabricante y propietaria del Sovaldi, el medicamento empleado en los tratamientos de Hepatitis C. La empresa matriz tiene su sede fiscal en Irlanda y 2015 fue un año de importantes incrementos de sus beneficios según [este artículo de El Español](https://www.elespanol.com/economia/empresas/20170228/197230886_0.html).</p>
+
+```{r fig.width=7}
+### por empresas
+
+menores$NIF <- str_remove(menores$NIF, "-")
+menores$NIF[menores$NIF == "A80754799"] <- "B80754799"
+
+NIFs <- menores[,c(10,11)] %>% group_by(NIF, adjudicatario) %>% summarise(N = n())
+
+NIFs <- subset(NIFs, subset = !duplicated(NIF))
+NIFs <- NIFs[,c(1,2)]
+
+NIFs$NIF <- str_trim(NIFs$NIF, side = "both")
+
+
+
+porNIF <- menores %>% group_by(NIF) %>% summarise(N = n(), conIVA = sum(conIVA))
+porNIF <- merge(porNIF, NIFs, by = "NIF")
+porNIF <- subset(porNIF, select = c(1,4,2,3))
+
+porNIF$adjudicatario[porNIF$NIF == "B86418787"] <- "ABBVIE FARMACÉUTICA, S.L.U."
+porNIF$adjudicatario[porNIF$NIF == "A08023145"] <- "ROCHE FARMA, S.A."
+
+
+top10 <- porNIF[porNIF$conIVA >= 25249096.5,]
+
+p <- ggplot(top10, aes(reorder(adjudicatario, conIVA), conIVA))
+p + geom_col() + coord_flip() + 
+  theme_minimal(base_family = "Roboto Condensed") + 
+  theme(legend.position = "bottom", plot.title = element_text(face = "bold"), axis.title.x = element_text(margin = margin(t = 20))) +
+  scale_y_continuous(labels = euro_french) +
+  labs(y = "Importe total con IVA",
+       x = NULL, 
+       title = "Principales empresas beneficiarias de los contratos menores",
+       subtitle = "Los datos corresponden al periodo julio de 2015-diciembre de 2017.")
+```
+
+
+
+
+
+
