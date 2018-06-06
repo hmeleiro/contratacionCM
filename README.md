@@ -3,6 +3,10 @@ Proyecto de scrapeo del [portal de contratación de la Comunidad de Madrid](http
 
 Puedes ver un breve informe con los datos en este [enlace](https://cdn.rawgit.com/meneos/contratacionCM/0dc0380e/Informe.html).
 
+Aquí un gráfico a modo de ejemplo de uso y [aquí](https://github.com/meneos/contratacionCM/blob/master/Hosptial%20San%20Carlos.R) el código utilizado para generar el gráfico.:
+![Image of Contratos Menores en el Hospital San Carlos](https://github.com/meneos/contratacionCM/blob/master/graphs/Menores%20San%20Carlos.png)
+
+
 ## Cómo citar el dataset
 [Dataset contratación pública en la Comunidad de Madrid (2015-2017)](https://github.com/meneos/contratacionCM) elaborado por [@hmeleiros](https://twitter.com/hmeleiros).
 
