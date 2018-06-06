@@ -9,5 +9,5 @@ Puedes ver un breve informe con los datos en este [enlace](https://cdn.rawgit.co
 ## Cómo citar los scrapers
 [Scrapers Portal de Contratación de la Comunidad de Madrid](https://github.com/meneos/contratacionCM) elaborado por [@hmeleiros](https://twitter.com/hmeleiros).
 
-Se deberá incluir los links al repositorio y a la cuenta de Twitter @hmeleiros
+En la medida de lo posible se deberá incluir los links al repositorio y a la cuenta de Twitter @hmeleiros
 
