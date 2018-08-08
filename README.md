@@ -7,11 +7,13 @@ Aquí un gráfico a modo de ejemplo de uso y [aquí](https://github.com/meneos/c
 ![Image of Contratos Menores en el Hospital San Carlos](https://github.com/meneos/contratacionCM/blob/master/graphs/Menores%20San%20Carlos.png)
 
 
-## Cómo citar el dataset
-[Dataset contratación pública en la Comunidad de Madrid (2015-2017)](https://github.com/meneos/contratacionCM) elaborado por [@hmeleiros](https://twitter.com/hmeleiros).
+## Cómo citar
 
-## Cómo citar los scrapers
-[Scrapers Portal de Contratación de la Comunidad de Madrid](https://github.com/meneos/contratacionCM) elaborado por [@hmeleiros](https://twitter.com/hmeleiros).
+Cómo citar el dataset:
 
-En la medida de lo posible se deberá incluir los links al repositorio y a la cuenta de Twitter @hmeleiros
+[Meleiro Suárez, H.](https://twitter.com/hmeleiros) (2018). Contratación pública en la Comunidad de Madrid (2015-2017) [dataset]. URL: https://www.dropbox.com/s/dxp06g6jwgqj600/contratospublicos_15_17_completo_formateado.csv?dl=0
 
+
+Cómo citar los scrapers:
+
+[Meleiro Suárez, H.](https://twitter.com/hmeleiros) (2018). Scraper Portal de Contratación de la Comunidad de Madrid [repositorio]. URL: https://github.com/meneos/contratacionCM
